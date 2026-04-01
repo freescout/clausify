@@ -190,6 +190,10 @@ Create a `.env.local` file at the root:
 VITE_API_URL=http://localhost:3000
 ```
 
+### Git workflow
+
+This project follows a simple solo feature-branch workflow:
+
 ---
 
 ## API Contract
@@ -237,21 +241,29 @@ The web platform communicates with the backend via REST API.
 
 - [x] Project scaffold
 - [x] Design system & tokens
-- [x] Layout components
-- [x] UI primitives
+- [x] Layout components (Sidebar, Topbar, BottomNav)
+- [x] UI primitives (Button, Badge, ScoreBar, Card)
 - [x] TypeScript types
 - [x] API client
-- [ ] Theme toggle (light/dark)
-- [ ] Router + AppShell
+- [x] Theme toggle (light/dark) with persistence
+- [x] Router with lazy loading
+- [x] AppShell layout (collapsible sidebar, responsive)ll
 - [ ] Dashboard page
 - [ ] Sites list page
 - [ ] Site detail page
 - [ ] Version history page
 - [ ] Settings page
 - [ ] Login / Register page
-- [ ] v2: Multi-site comparator
-- [ ] v2: Tags & grouping
-- [ ] v2: PDF export
+- [ ] Analyze T&C modal
+- [ ] API integration
+- [ ] Polish (transitions, empty states, error states)
+- [ ] Deploy
+
+### v2
+
+- [ ] Multi-site comparator
+- [ ] Tags & grouping
+- [ ] PDF export
 
 ---
 
