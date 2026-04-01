@@ -6,9 +6,9 @@ export const SCORE_BANDS = [
   {
     min: 0,
     max: 30,
-    rating: "green" as Rating,
-    label: "Safe",
-    color: "#1D9E75",
+    rating: "red" as Rating,
+    label: "High risk",
+    color: "#E24B4A",
   },
   {
     min: 31,
@@ -20,9 +20,9 @@ export const SCORE_BANDS = [
   {
     min: 66,
     max: 100,
-    rating: "red" as Rating,
-    label: "High risk",
-    color: "#E24B4A",
+    rating: "green" as Rating,
+    label: "Safe",
+    color: "#1D9E75",
   },
 ];
 
