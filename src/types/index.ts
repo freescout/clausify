@@ -34,9 +34,11 @@ export interface Site {
 export interface SiteListItem {
   id: string;
   domain: string;
-  analyzed_at: string;
-  global_score: number;
-  rating: Rating;
+  name: string;
+  created_at: string;
+  updated_at: string;
+  current_global_score: number | null;
+  current_rating: string | null;
   clause_count: number;
   top_concern: ClauseType | null;
 }
