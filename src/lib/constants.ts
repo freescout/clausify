@@ -1,0 +1,65 @@
+import type { ClauseType, Rating, Severity } from "@/types";
+
+// ─── Score bands ───────────────────────────────────────────────────────────
+
+export const SCORE_BANDS = [
+  {
+    min: 0,
+    max: 30,
+    rating: "green" as Rating,
+    label: "Safe",
+    color: "#1D9E75",
+  },
+  {
+    min: 31,
+    max: 65,
+    rating: "orange" as Rating,
+    label: "Moderate",
+    color: "#EF9F27",
+  },
+  {
+    min: 66,
+    max: 100,
+    rating: "red" as Rating,
+    label: "High risk",
+    color: "#E24B4A",
+  },
+];
+
+// ─── Clause types ──────────────────────────────────────────────────────────
+
+export const CLAUSE_TYPES: ClauseType[] = [
+  "personal_data",
+  "third_party",
+  "abusive",
+  "retention",
+  "recourse",
+];
+
+// ─── Severity ──────────────────────────────────────────────────────────────
+
+export const SEVERITIES: Severity[] = ["high", "medium", "low"];
+
+// ─── Pagination ────────────────────────────────────────────────────────────
+
+export const DEFAULT_PAGE_SIZE = 12;
+
+// ─── Query keys ────────────────────────────────────────────────────────────
+
+export const QUERY_KEYS = {
+  sites: ["sites"] as const,
+  site: (id: string) => ["sites", id] as const,
+  siteHistory: (id: string) => ["sites", id, "history"] as const,
+  dashboard: ["dashboard"] as const,
+} as const;
+
+// ─── Routes ────────────────────────────────────────────────────────────────
+
+export const ROUTES = {
+  dashboard: "/",
+  sites: "/sites",
+  site: (id: string) => `/sites/${id}`,
+  siteHistory: (id: string) => `/sites/${id}/history`,
+  settings: "/settings",
+  login: "/login",
+} as const;
