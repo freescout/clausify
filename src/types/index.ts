@@ -13,7 +13,8 @@ export type Rating = "green" | "orange" | "red";
 
 export interface Clause {
   id: string;
-  type: ClauseType;
+  analysis_id: string;
+  clause_type: ClauseType;
   content: string;
   severity: Severity;
   score_impact: number;
@@ -44,6 +45,14 @@ export interface SiteListItem {
 }
 
 // ─── Analysis ──────────────────────────────────────────────────────────────
+
+export interface Analysis {
+  id: string;
+  cgv_version_id: string;
+  global_score: number;
+  rating: string;
+  analyzed_at: string;
+}
 
 export interface AnalysisResult {
   site: string;
@@ -108,4 +117,26 @@ export interface SiteFilters {
   sort_field: SortField;
   sort_order: SortOrder;
   page: number;
+}
+
+export interface CgvVersion {
+  id: string;
+  site_id: string;
+  content_hash: string;
+  raw_text: string | null;
+  source_url: string | null;
+  extracted_at: string;
+}
+
+export interface SiteDetail {
+  id: string;
+  domain: string;
+  name: string | null;
+  current_global_score: number | null;
+  current_rating: string | null;
+  created_at: string;
+  updated_at: string;
+  latest_analysis: Analysis | null;
+  clauses: Clause[];
+  cgv_version: CgvVersion | null;
 }
