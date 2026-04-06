@@ -1,5 +1,5 @@
-import { MOCK_DASHBOARD_STATS, MOCK_RECENT_SITES } from "@/lib/mockData";
-import { CLAUSE_LABELS, formatRelativeTime, getRatingLabel } from "@/lib/utils";
+import { useSites } from "@/hooks/useSites";
+import { CLAUSE_LABELS, formatRelativeTime } from "@/lib/utils";
 import type { SiteListItem } from "@/types";
 
 function StatCard({
@@ -24,14 +24,17 @@ function StatCard({
   );
 }
 
-function ScoreDistribution() {
-  const { score_distribution } = MOCK_DASHBOARD_STATS;
-  const max = Math.max(...score_distribution.map((d) => d.count));
+function ScoreDistribution({
+  distribution,
+}: {
+  distribution: { range: string; rating: string; count: number }[];
+}) {
+  const max = Math.max(...distribution.map((d) => d.count), 1);
 
   const barColor: Record<string, string> = {
-    green: "bg-(--color-safe)",
-    orange: "bg-(--color-moderate)",
-    red: "bg-(--color-high)",
+    green: "bg-safe",
+    orange: "bg-moderate",
+    red: "bg-high",
   };
 
   return (
@@ -40,7 +43,7 @@ function ScoreDistribution() {
         Score distribution
       </h3>
       <div className="flex items-end gap-3 h-28">
-        {score_distribution.map((d) => (
+        {distribution.map((d) => (
           <div
             key={d.range}
             className="flex flex-col items-center gap-1 flex-1"
@@ -56,9 +59,9 @@ function ScoreDistribution() {
       </div>
       <div className="flex gap-4 mt-4">
         {[
-          { label: "Safe", color: "bg-(--color-safe)" },
-          { label: "Moderate", color: "bg-(--color-moderate)" },
-          { label: "High risk", color: "bg-(--color-high)" },
+          { label: "Safe", color: "bg-safe" },
+          { label: "Moderate", color: "bg-moderate" },
+          { label: "High risk", color: "bg-high" },
         ].map(({ label, color }) => (
           <div key={label} className="flex items-center gap-1.5">
             <div className={`w-2 h-2 rounded-sm ${color}`} />
@@ -72,9 +75,9 @@ function ScoreDistribution() {
 
 function TopRiskySites({ sites }: { sites: SiteListItem[] }) {
   const ratingColor: Record<string, string> = {
-    red: "text-(--color-high)",
-    orange: "text-(--color-moderate)",
-    green: "text-(--color-safe)",
+    red: "text-high",
+    orange: "text-moderate",
+    green: "text-safe",
   };
 
   return (
@@ -91,8 +94,10 @@ function TopRiskySites({ sites }: { sites: SiteListItem[] }) {
             </span>
             <div className="w-16 h-1.5 bg-(--bg-tertiary) rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full ${site.current_rating === "red" ? "bg-(--color-high)" : site.current_rating === "orange" ? "bg-(--color-moderate)" : "bg-(--color-safe)"}`}
-                style={{ width: `${site.current_global_score ?? 0}%` }}
+                className={`h-full rounded-full ${site.current_rating === "red" ? "bg-high" : site.current_rating === "orange" ? "bg-moderate" : "bg-safe"}`}
+                style={{
+                  width: `${Math.max(site.current_global_score ?? 0, 3)}%`,
+                }}
               />
             </div>
             <span
@@ -140,7 +145,7 @@ function RecentAnalyses({ sites }: { sites: SiteListItem[] }) {
               {site.current_global_score ?? "—"}
             </span>
             <span className="text-xs text-(--fg-tertiary) w-20 text-right hidden sm:block">
-              {site.clause_count} clauses
+              {site.clause_count} clause{site.clause_count !== 1 ? "s" : ""}
             </span>
             {site.top_concern && (
               <span className="text-xs text-(--fg-tertiary) hidden md:block w-28 truncate">
@@ -158,48 +163,88 @@ function RecentAnalyses({ sites }: { sites: SiteListItem[] }) {
 }
 
 export default function DashboardPage() {
-  const stats = MOCK_DASHBOARD_STATS;
+  const { data: sites = [], isLoading, isError } = useSites();
+
+  if (isLoading)
+    return <div className="text-sm text-(--fg-tertiary)">Loading...</div>;
+  if (isError)
+    return (
+      <div className="text-sm text-(--fg-tertiary)">
+        Failed to load dashboard.
+      </div>
+    );
+
+  const analyzedSites = sites.filter((s) => s.current_global_score !== null);
+  const totalSites = sites.length;
+  const averageScore = analyzedSites.length
+    ? Math.round(
+        analyzedSites.reduce(
+          (sum, s) => sum + (s.current_global_score ?? 0),
+          0,
+        ) / analyzedSites.length,
+      )
+    : 0;
+  const highRiskCount = sites.filter((s) => s.current_rating === "red").length;
+  const topRisky = [...analyzedSites]
+    .sort(
+      (a, b) =>
+        (a.current_global_score ?? 100) - (b.current_global_score ?? 100),
+    )
+    .slice(0, 5);
+  const scoreDistribution = [
+    {
+      range: "0–30",
+      rating: "red",
+      count: sites.filter(
+        (s) =>
+          (s.current_global_score ?? 0) <= 30 &&
+          s.current_global_score !== null,
+      ).length,
+    },
+    {
+      range: "31–65",
+      rating: "orange",
+      count: sites.filter(
+        (s) =>
+          (s.current_global_score ?? 0) > 30 &&
+          (s.current_global_score ?? 0) <= 65,
+      ).length,
+    },
+    {
+      range: "66–100",
+      rating: "green",
+      count: sites.filter((s) => (s.current_global_score ?? 0) > 65).length,
+    },
+  ];
+  const recentSites = [...sites]
+    .sort(
+      (a, b) =>
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+    )
+    .slice(0, 8);
 
   return (
     <div className="space-y-6">
       {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard label="Total sites" value={totalSites} />
+        <StatCard label="Average score" value={averageScore} />
+        <StatCard label="High risk" value={highRiskCount} sub="Score 0–30" />
         <StatCard
-          label="Total sites"
-          value={stats.total_sites}
-          sub="+8 this week"
-        />
-        <StatCard
-          label="Average score"
-          value={stats.average_score}
-          sub={getRatingLabel(
-            stats.average_score <= 30
-              ? "green"
-              : stats.average_score <= 65
-                ? "orange"
-                : "red",
-          )}
-        />
-        <StatCard
-          label="High risk"
-          value={stats.high_risk_count}
-          sub="Score > 65"
-        />
-        <StatCard
-          label="Analyzed today"
-          value={stats.analyzed_today}
-          sub="Last: 14 min ago"
+          label="Analyzed"
+          value={analyzedSites.length}
+          sub={`${totalSites - analyzedSites.length} pending`}
         />
       </div>
 
       {/* Chart + risky sites */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ScoreDistribution />
-        <TopRiskySites sites={stats.top_risky} />
+        <ScoreDistribution distribution={scoreDistribution} />
+        <TopRiskySites sites={topRisky} />
       </div>
 
       {/* Recent analyses */}
-      <RecentAnalyses sites={MOCK_RECENT_SITES} />
+      <RecentAnalyses sites={recentSites} />
     </div>
   );
 }

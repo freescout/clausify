@@ -29,6 +29,8 @@ export interface SiteListItem {
   created_at: string;
   updated_at: string;
   tags: Tag[];
+  clause_count: number;
+  top_concern: ClauseType | null;
 }
 
 // ─── Analysis ──────────────────────────────────────────────────────────────
