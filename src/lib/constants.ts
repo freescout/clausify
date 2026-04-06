@@ -1,4 +1,4 @@
-import type { ClauseType, Rating, Severity } from "@/types";
+import type { ClauseType, Rating, Severity, SortField } from "@/types";
 
 // ─── Score bands ───────────────────────────────────────────────────────────
 
@@ -63,3 +63,24 @@ export const ROUTES = {
   settings: "/settings",
   login: "/login",
 } as const;
+
+// ─── Pagination ────────────────────────────────────────────────────────────
+
+export const PAGE_SIZE = 12;
+
+// ─── Rating options ────────────────────────────────────────────────────────
+
+export const RATING_OPTIONS: { value: Rating | "all"; label: string }[] = [
+  { value: "all", label: "All ratings" },
+  { value: "red", label: "High risk" },
+  { value: "orange", label: "Moderate" },
+  { value: "green", label: "Safe" },
+];
+
+// ─── Sort options ──────────────────────────────────────────────────────────
+
+export const SORT_OPTIONS: { value: SortField; label: string }[] = [
+  { value: "date", label: "Most recent" },
+  { value: "score", label: "Score" },
+  { value: "name", label: "Name" },
+];
