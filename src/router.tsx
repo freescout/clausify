@@ -48,7 +48,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "sites/:id/history",
+        path: "sites/:domain/history",
         element: (
           <Suspense fallback={<PageLoader />}>
             <SiteHistory />

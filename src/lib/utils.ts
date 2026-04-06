@@ -30,11 +30,11 @@ export function getRatingLabel(rating: Rating): string {
 export function getScoreBarColor(rating: Rating): string {
   switch (rating) {
     case "green":
-      return "bg-(--color-safe)";
+      return "bg-safe";
     case "orange":
-      return "bg-(--color-moderate)";
+      return "bg-moderate";
     case "red":
-      return "bg-(--color-high)";
+      return "bg-high";
   }
 }
 
