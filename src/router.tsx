@@ -40,7 +40,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "sites/:id",
+        path: "sites/:domain",
         element: (
           <Suspense fallback={<PageLoader />}>
             <SiteDetail />

@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ExternalLink, Clock } from "lucide-react";
-import { MOCK_SITE_DETAIL } from "@/lib/mockData";
+import { useSiteDetail } from "@/hooks/useSites";
 import {
   CLAUSE_LABELS,
   SEVERITY_LABELS,
@@ -163,19 +163,14 @@ function ScoreBreakdown({ clauses }: { clauses: Clause[] }) {
 }
 
 export default function SiteDetailPage() {
-  const { id } = useParams();
-  console.log("id", id);
+  const { domain } = useParams<{ domain: string }>();
   const navigate = useNavigate();
+  const { data: site, isLoading, isError } = useSiteDetail(domain!);
 
-  const site = MOCK_SITE_DETAIL;
-
-  if (!site) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <span className="text-sm text-(--fg-tertiary)">Site not found</span>
-      </div>
-    );
-  }
+  if (isLoading)
+    return <div className="text-sm text-(--fg-tertiary)">Loading...</div>;
+  if (isError || !site)
+    return <div className="text-sm text-(--fg-tertiary)">Site not found.</div>;
 
   const rating = site.current_rating ?? "green";
   const score = site.current_global_score ?? 0;
@@ -214,9 +209,9 @@ export default function SiteDetailPage() {
               <span className="text-sm text-(--fg-tertiary)">
                 {site.domain}
               </span>
-              {site.cgv_version?.source_url && (
+              {site.cgv_versions[0]?.source_url && (
                 <a
-                  href={site.cgv_version.source_url}
+                  href={site.cgv_versions[0].source_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 text-xs text-primary hover:underline"
@@ -229,11 +224,20 @@ export default function SiteDetailPage() {
                 <Clock size={11} />
                 Analyzed{" "}
                 {formatRelativeTime(
-                  site.latest_analysis?.analyzed_at ?? site.created_at,
+                  site.cgv_versions[0]?.analysis?.analyzed_at ??
+                    site.created_at,
                 )}
               </span>
             </div>
           </div>
+
+          <button
+            onClick={() => navigate(`/sites/${domain}/history`)}
+            className="flex items-center gap-1.5 text-xs text-(--fg-secondary) hover:text-(--fg) border border-(--border) px-3 py-1.5 rounded-md hover:border-(--border-strong) transition-colors"
+          >
+            <Clock size={12} />
+            View history
+          </button>
         </div>
       </div>
 
@@ -243,21 +247,29 @@ export default function SiteDetailPage() {
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-(--fg)">
-              {site.clauses.length} clause{site.clauses.length !== 1 ? "s" : ""}{" "}
-              detected
+              {site.cgv_versions[0]?.analysis?.clauses?.length ?? 0} clause
+              {(site.cgv_versions[0]?.analysis?.clauses?.length ?? 0) !== 1
+                ? "s"
+                : ""}
             </h3>
             <span className="text-xs text-(--fg-tertiary)">
               Analyzed on{" "}
-              {formatDate(site.latest_analysis?.analyzed_at ?? site.created_at)}
+              {formatDate(
+                site.cgv_versions[0]?.analysis?.analyzed_at ?? site.created_at,
+              )}
             </span>
           </div>
-          <ClausesByCategory clauses={site.clauses} />
+          <ClausesByCategory
+            clauses={site.cgv_versions[0]?.analysis?.clauses ?? []}
+          />
         </div>
 
         {/* Score — right sidebar */}
         <div className="space-y-4">
           <ScoreGauge score={score} rating={rating} />
-          <ScoreBreakdown clauses={site.clauses} />
+          <ScoreBreakdown
+            clauses={site.cgv_versions[0]?.analysis?.clauses ?? []}
+          />
         </div>
       </div>
     </div>

@@ -32,12 +32,12 @@ export interface SiteListItem {
 }
 
 // ─── Analysis ──────────────────────────────────────────────────────────────
-
-export interface Analysis {
+interface Analysis {
   id: string;
   global_score: number;
   rating: string;
   analyzed_at: string;
+  clauses: Clause[];
 }
 
 // ─── CgvVersion ────────────────────────────────────────────────────────────
