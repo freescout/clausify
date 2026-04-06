@@ -1,22 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, ChevronUp, ChevronDown, LayoutGrid, List } from "lucide-react";
-import { MOCK_RECENT_SITES } from "@/lib/mockData";
-import { CLAUSE_LABELS, formatRelativeTime } from "@/lib/utils";
+import { useSites } from "@/hooks/useSites";
+import { formatRelativeTime } from "@/lib/utils";
 import type { SiteListItem, Rating, SortField, SortOrder } from "@/types";
-
-const RATING_OPTIONS: { value: Rating | "all"; label: string }[] = [
-  { value: "all", label: "All ratings" },
-  { value: "red", label: "High risk" },
-  { value: "orange", label: "Moderate" },
-  { value: "green", label: "Safe" },
-];
-
-const SORT_OPTIONS: { value: SortField; label: string }[] = [
-  { value: "date", label: "Most recent" },
-  { value: "score", label: "Score" },
-  { value: "name", label: "Name" },
-];
+import { PAGE_SIZE, RATING_OPTIONS, SORT_OPTIONS } from "@/lib/constants";
 
 function RatingBadge({ rating }: { rating: string | null }) {
   if (!rating) return <span className="text-xs text-(--fg-tertiary)">—</span>;
@@ -45,20 +33,20 @@ function SiteCard({ site }: { site: SiteListItem }) {
   const rating = site.current_rating ?? "green";
 
   const barColor: Record<string, string> = {
-    red: "bg-(--color-high)",
-    orange: "bg-(--color-moderate)",
-    green: "bg-(--color-safe)",
+    red: "bg-high",
+    orange: "bg-moderate",
+    green: "bg-safe",
   };
 
   const initBg: Record<string, string> = {
-    red: "bg-(--color-high-bg) text-(--color-high-text)",
-    orange: "bg-(--color-moderate-bg) text-(--color-moderate-text)",
-    green: "bg-(--color-safe-bg) text-(--color-safe-text)",
+    red: "bg-high-bg text-high-text",
+    orange: "bg-moderate-bg text-moderate-text",
+    green: "bg-safe-bg text-safe-text",
   };
 
   return (
     <div
-      onClick={() => navigate(`/sites/${site.id}`)}
+      onClick={() => navigate(`/sites/${site.domain}`)}
       className="bg-(--surface) border border-(--border) rounded-lg p-4 cursor-pointer hover:border-(--border-strong) hover:shadow-sm transition-all"
     >
       <div className="flex items-start gap-3">
@@ -99,11 +87,12 @@ function SiteCard({ site }: { site: SiteListItem }) {
       {/* Footer */}
       <div className="flex items-center justify-between mt-3">
         <span className="text-xs text-(--fg-tertiary)">
-          {site.clause_count} clauses
-          {site.top_concern && ` · ${CLAUSE_LABELS[site.top_concern]}`}
+          {site.tags.length > 0
+            ? site.tags.map((t) => t.name).join(", ")
+            : "No tags"}
         </span>
         <span className="text-xs text-(--fg-tertiary)">
-          {formatRelativeTime(site.created_at)}
+          {formatRelativeTime(site.updated_at)}
         </span>
       </div>
     </div>
@@ -112,11 +101,46 @@ function SiteCard({ site }: { site: SiteListItem }) {
 
 export default function SitesListPage() {
   const navigate = useNavigate();
+  const { data: sites = [], isLoading, isError } = useSites();
   const [search, setSearch] = useState("");
   const [rating, setRating] = useState<Rating | "all">("all");
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [view, setView] = useState<"grid" | "table">("grid");
+  const [page, setPage] = useState(1);
+
+  const filtered = sites
+    .filter((s) => {
+      const matchSearch =
+        s.domain.toLowerCase().includes(search.toLowerCase()) ||
+        (s.name ?? "").toLowerCase().includes(search.toLowerCase());
+      const matchRating = rating === "all" || s.current_rating === rating;
+      return matchSearch && matchRating;
+    })
+    .sort((a, b) => {
+      const dir = sortOrder === "asc" ? 1 : -1;
+      if (sortField === "score")
+        return (
+          ((a.current_global_score ?? 0) - (b.current_global_score ?? 0)) * dir
+        );
+      if (sortField === "name") return a.domain.localeCompare(b.domain) * dir;
+      return (
+        (new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) *
+        dir
+      );
+    });
+
+  const resetPage = () => setPage(1);
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    resetPage();
+  };
+
+  const handleRating = (value: Rating | "all") => {
+    setRating(value);
+    resetPage();
+  };
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -125,26 +149,11 @@ export default function SitesListPage() {
       setSortField(field);
       setSortOrder("desc");
     }
+    resetPage();
   };
 
-  const filtered = MOCK_RECENT_SITES.filter((s) => {
-    const matchSearch =
-      s.domain.toLowerCase().includes(search.toLowerCase()) ||
-      (s.name ?? "").toLowerCase().includes(search.toLowerCase());
-    const matchRating = rating === "all" || s.current_rating === rating;
-    return matchSearch && matchRating;
-  }).sort((a, b) => {
-    const dir = sortOrder === "asc" ? 1 : -1;
-    if (sortField === "score")
-      return (
-        ((a.current_global_score ?? 0) - (b.current_global_score ?? 0)) * dir
-      );
-    if (sortField === "name") return a.domain.localeCompare(b.domain) * dir;
-    return (
-      (new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) *
-      dir
-    );
-  });
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return null;
@@ -155,11 +164,28 @@ export default function SitesListPage() {
     );
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-sm text-(--fg-tertiary)">
+          Failed to load sites. Is the backend running?
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
-        {/* Search */}
         <div className="relative flex-1">
           <Search
             size={14}
@@ -169,15 +195,14 @@ export default function SitesListPage() {
             type="text"
             placeholder="Search sites..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2 text-sm bg-(--surface) border border-(--border) rounded-md text-(--fg) placeholder:text-(--fg-tertiary) focus:outline-none focus:border-(--border-strong)"
           />
         </div>
 
-        {/* Rating filter */}
         <select
           value={rating}
-          onChange={(e) => setRating(e.target.value as Rating | "all")}
+          onChange={(e) => handleRating(e.target.value as Rating | "all")}
           className="px-3 py-2 text-sm bg-(--surface) border border-(--border) rounded-md text-(--fg) focus:outline-none focus:border-(--border-strong)"
         >
           {RATING_OPTIONS.map((o) => (
@@ -187,7 +212,6 @@ export default function SitesListPage() {
           ))}
         </select>
 
-        {/* Sort */}
         <div className="flex gap-1">
           {SORT_OPTIONS.map((o) => (
             <button
@@ -205,7 +229,6 @@ export default function SitesListPage() {
           ))}
         </div>
 
-        {/* View toggle */}
         <div className="flex gap-1 border border-(--border) rounded-md p-0.5 bg-(--surface)">
           <button
             onClick={() => setView("grid")}
@@ -222,31 +245,15 @@ export default function SitesListPage() {
         </div>
       </div>
 
-      {/* Results count */}
       <div className="text-xs text-(--fg-tertiary)">
         {filtered.length} site{filtered.length !== 1 ? "s" : ""} found
+        {totalPages > 1 && ` — page ${page} of ${totalPages}`}
       </div>
-
-      {/* Cards grid */}
-      {/*       {filtered.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((site) => (
-            <SiteCard key={site.id} site={site} />
-          ))}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="text-(--fg-tertiary) text-sm">No sites found</div>
-          <div className="text-(--fg-tertiary) text-xs mt-1">
-            Try adjusting your search or filters
-          </div>
-        </div>
-      )} */}
 
       {filtered.length > 0 ? (
         view === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((site) => (
+            {paginated.map((site) => (
               <SiteCard key={site.id} site={site} />
             ))}
           </div>
@@ -265,10 +272,7 @@ export default function SitesListPage() {
                     Score
                   </th>
                   <th className="text-left text-xs font-medium text-(--fg-tertiary) px-4 py-3 uppercase tracking-wide hidden md:table-cell">
-                    Clauses
-                  </th>
-                  <th className="text-left text-xs font-medium text-(--fg-tertiary) px-4 py-3 uppercase tracking-wide hidden md:table-cell">
-                    Top concern
+                    Tags
                   </th>
                   <th className="text-left text-xs font-medium text-(--fg-tertiary) px-4 py-3 uppercase tracking-wide">
                     Analyzed
@@ -276,10 +280,10 @@ export default function SitesListPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-(--border)">
-                {filtered.map((site) => (
+                {paginated.map((site) => (
                   <tr
                     key={site.id}
-                    onClick={() => navigate(`/sites/${site.id}`)}
+                    onClick={() => navigate(`/sites/${site.domain}`)}
                     className="hover:bg-(--bg-secondary) cursor-pointer transition-colors"
                   >
                     <td className="px-4 py-3">
@@ -329,11 +333,23 @@ export default function SitesListPage() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-(--fg-secondary) hidden md:table-cell">
-                      {site.clause_count}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-(--fg-secondary) hidden md:table-cell">
-                      {site.top_concern ? CLAUSE_LABELS[site.top_concern] : "—"}
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      {site.tags.length > 0 ? (
+                        site.tags.map((t) => (
+                          <span
+                            key={t.id}
+                            style={{
+                              backgroundColor: t.color + "22",
+                              color: t.color,
+                            }}
+                            className="text-xs font-medium px-2 py-0.5 rounded-full mr-1"
+                          >
+                            {t.name}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-(--fg-tertiary)">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-sm text-(--fg-tertiary)">
                       {formatRelativeTime(site.created_at)}
@@ -350,6 +366,59 @@ export default function SitesListPage() {
           <div className="text-(--fg-tertiary) text-xs mt-1">
             Try adjusting your search or filters
           </div>
+        </div>
+      )}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-4">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="px-3 py-1.5 text-sm rounded-md border border-(--border) text-(--fg-secondary) hover:border-(--border-strong) disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            ← Previous
+          </button>
+
+          <div className="flex gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(
+                (p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1,
+              )
+              .reduce<(number | "...")[]>((acc, p, i, arr) => {
+                if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push("...");
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((p, i) =>
+                p === "..." ? (
+                  <span
+                    key={`dots-${i}`}
+                    className="px-2 py-1.5 text-sm text-(--fg-tertiary)"
+                  >
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p as number)}
+                    className={`w-8 h-8 text-sm rounded-md border transition-colors ${
+                      page === p
+                        ? "bg-primary text-white border-primary"
+                        : "border-(--border) text-(--fg-secondary) hover:border-(--border-strong)"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ),
+              )}
+          </div>
+
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="px-3 py-1.5 text-sm rounded-md border border-(--border) text-(--fg-secondary) hover:border-(--border-strong) disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Next →
+          </button>
         </div>
       )}
     </div>
