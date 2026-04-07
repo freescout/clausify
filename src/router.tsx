@@ -8,17 +8,8 @@ const SitesList = lazy(() => import("@/pages/sites/SitesListPage"));
 const SiteDetail = lazy(() => import("@/pages/sites/SiteDetailPage"));
 const SiteHistory = lazy(() => import("@/pages/sites/SiteHistoryPage"));
 const Settings = lazy(() => import("@/pages/settings/SettingsPage"));
-const Login = lazy(() => import("@/pages/auth/LoginPage"));
 
 const router = createBrowserRouter([
-  {
-    path: "/login",
-    element: (
-      <Suspense fallback={<PageLoader />}>
-        <Login />
-      </Suspense>
-    ),
-  },
   {
     path: "/",
     element: <AppShell />,
