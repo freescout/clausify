@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import BottomNav from "./BottomNav";
+import LoginModal from "../ui/LoginModal";
 
 export default function AppShell() {
   return (
@@ -14,6 +15,7 @@ export default function AppShell() {
         </main>
       </div>
       <BottomNav />
+      <LoginModal />
     </div>
   );
 }
