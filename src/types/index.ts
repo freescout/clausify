@@ -34,7 +34,7 @@ export interface SiteListItem {
 }
 
 // ─── Analysis ──────────────────────────────────────────────────────────────
-interface Analysis {
+export interface Analysis {
   id: string;
   global_score: number;
   rating: string;

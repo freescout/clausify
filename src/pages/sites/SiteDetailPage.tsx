@@ -179,7 +179,7 @@ export default function SiteDetailPage() {
     <div className="space-y-6">
       {/* Back button */}
       <button
-        onClick={() => navigate(-1)}
+        onClick={() => navigate("/sites")}
         className="flex items-center gap-1.5 text-sm text-(--fg-tertiary) hover:text-(--fg) transition-colors"
       >
         <ArrowLeft size={14} />
