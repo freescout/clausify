@@ -1,4 +1,4 @@
-import type { SiteListItem, SiteDetail, CgvVersion } from "@/types";
+import type { SiteListItem, SiteDetail, CgvVersion, Tag } from "@/types";
 
 const BASE =
   (import.meta.env.VITE_API_BASE as string) || "http://localhost:3000";
@@ -66,5 +66,38 @@ export async function registerUser(
   }>("/api/auth/register", {
     method: "POST",
     body: JSON.stringify({ email, password, name }),
+  });
+}
+
+export async function fetchTags(): Promise<Tag[]> {
+  return request<Tag[]>("/api/tags");
+}
+
+export async function createTag(name: string, color: string): Promise<Tag> {
+  return request<Tag>("/api/tags", {
+    method: "POST",
+    body: JSON.stringify({ name, color }),
+  });
+}
+
+export async function deleteTag(tagId: string): Promise<void> {
+  return request<void>(`/api/tags/${tagId}`, { method: "DELETE" });
+}
+
+export async function assignTagToSite(
+  tagId: string,
+  siteId: string,
+): Promise<void> {
+  return request<void>(`/api/tags/${tagId}/sites/${siteId}`, {
+    method: "POST",
+  });
+}
+
+export async function removeTagFromSite(
+  tagId: string,
+  siteId: string,
+): Promise<void> {
+  return request<void>(`/api/tags/${tagId}/sites/${siteId}`, {
+    method: "DELETE",
   });
 }
