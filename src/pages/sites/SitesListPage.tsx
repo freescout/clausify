@@ -5,6 +5,8 @@ import { useSites } from "@/hooks/useSites";
 import { formatRelativeTime } from "@/lib/utils";
 import type { SiteListItem, Rating, SortField, SortOrder } from "@/types";
 import { PAGE_SIZE, RATING_OPTIONS, SORT_OPTIONS } from "@/lib/constants";
+import TagPopover from "@/components/ui/TagPopover";
+import { useAuthStore } from "@/stores/authStore";
 
 function RatingBadge({ rating }: { rating: string | null }) {
   if (!rating) return <span className="text-xs text-(--fg-tertiary)">—</span>;
@@ -31,6 +33,7 @@ function SiteCard({ site }: { site: SiteListItem }) {
   const navigate = useNavigate();
   const score = site.current_global_score ?? null;
   const rating = site.current_rating ?? "green";
+  const token = useAuthStore((s) => s.token);
 
   const barColor: Record<string, string> = {
     red: "bg-high",
@@ -86,11 +89,7 @@ function SiteCard({ site }: { site: SiteListItem }) {
 
       {/* Footer */}
       <div className="flex items-center justify-between mt-3">
-        <span className="text-xs text-(--fg-tertiary)">
-          {site.tags.length > 0
-            ? site.tags.map((t) => t.name).join(", ")
-            : "No tags"}
-        </span>
+        <div>{!!token && <TagPopover site={site} />}</div>
         <span className="text-xs text-(--fg-tertiary)">
           {formatRelativeTime(site.updated_at)}
         </span>
