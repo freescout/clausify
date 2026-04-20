@@ -56,10 +56,16 @@ export default function Topbar() {
           </button>
         )}
 
-        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors">
+        <a
+          // href="https://chrome.google.com/webstore/detail/YOUR_EXTENSION_ID"  // add id after finishing extension
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
+        >
           <Plus size={13} />
           Analyze T&amp;C
-        </button>
+        </a>
       </div>
     </header>
   );
