@@ -8,6 +8,7 @@ import {
   fetchSites,
   fetchTags,
   removeTagFromSite,
+  updateTag,
 } from "@/lib/api";
 import { QUERY_KEYS } from "@/lib/constants";
 import { useAuthStore } from "@/stores/authStore";
@@ -75,5 +76,19 @@ export function useRemoveTag() {
     mutationFn: ({ tagId, siteId }: { tagId: string; siteId: string }) =>
       removeTagFromSite(tagId, siteId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["sites"] }),
+  });
+}
+
+export function useUpdateTag() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      tagId,
+      data,
+    }: {
+      tagId: string;
+      data: { name?: string; color?: string };
+    }) => updateTag(tagId, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tags"] }),
   });
 }

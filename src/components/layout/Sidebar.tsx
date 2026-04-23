@@ -9,6 +9,7 @@ import {
   Shield,
 } from "lucide-react";
 import { ROUTES } from "@/lib/constants";
+import { useAuthStore } from "@/stores/authStore";
 
 const NAV_ITEMS = [
   { to: ROUTES.dashboard, icon: LayoutDashboard, label: "Dashboard" },
@@ -18,6 +19,11 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const { token } = useAuthStore();
+
+  const navItems = NAV_ITEMS.filter(
+    ({ to }) => to !== ROUTES.settings || !!token,
+  );
 
   return (
     <aside
@@ -44,7 +50,7 @@ export default function Sidebar() {
 
       {/* Nav items */}
       <nav className="flex-1 py-3 px-2 space-y-0.5">
-        {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
+        {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}

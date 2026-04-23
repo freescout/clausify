@@ -101,3 +101,13 @@ export async function removeTagFromSite(
     method: "DELETE",
   });
 }
+
+export async function updateTag(
+  tagId: string,
+  data: { name?: string; color?: string },
+): Promise<Tag> {
+  return request<Tag>(`/api/tags/${tagId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
