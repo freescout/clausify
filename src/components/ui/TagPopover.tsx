@@ -27,7 +27,6 @@ export default function TagPopover({ site }: Props) {
   const assignTag = useAssignTag();
   const removeTag = useRemoveTag();
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
@@ -40,7 +39,7 @@ export default function TagPopover({ site }: Props) {
   }, [open]);
 
   const handleOpen = (e: React.MouseEvent) => {
-    e.stopPropagation(); // prevent card navigation
+    e.stopPropagation();
     if (!token) {
       openLoginModal();
       return;
@@ -73,7 +72,6 @@ export default function TagPopover({ site }: Props) {
 
   return (
     <div ref={ref} className="relative" onClick={(e) => e.stopPropagation()}>
-      {/* Trigger — replaces the "No tags" text */}
       <button
         onClick={handleOpen}
         className="flex items-center gap-1 flex-wrap"
@@ -95,16 +93,8 @@ export default function TagPopover({ site }: Props) {
         )}
       </button>
 
-      {/* Popover */}
       {open && (
-        <div
-          className="absolute bottom-full left-0 mb-2 w-56 rounded-xl shadow-lg z-40 p-3 space-y-2"
-          style={{
-            background: "var(--bg)",
-            border: "1px solid var(--border)",
-          }}
-        >
-          {/* Existing tags */}
+        <div className="absolute bottom-full left-0 mb-2 w-56 rounded-xl shadow-lg z-40 p-3 space-y-2 bg-(--bg) border border-(--border)">
           <div className="space-y-0.5">
             {allTags.length === 0 && !creating && (
               <p className="text-xs text-(--fg-tertiary) py-1">
@@ -131,7 +121,6 @@ export default function TagPopover({ site }: Props) {
             ))}
           </div>
 
-          {/* Create new tag */}
           {creating ? (
             <form
               onSubmit={handleCreate}
@@ -143,14 +132,8 @@ export default function TagPopover({ site }: Props) {
                 placeholder="Tag name"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                className="w-full px-2.5 py-1.5 text-sm rounded-lg outline-none"
-                style={{
-                  background: "var(--bg-secondary)",
-                  border: "1px solid var(--border)",
-                  color: "var(--fg)",
-                }}
+                className="w-full px-2.5 py-1.5 text-sm rounded-lg outline-none bg-(--bg-secondary) border border-(--border) text-(--fg)"
               />
-              {/* Color picker */}
               <div className="flex gap-1.5 flex-wrap">
                 {PRESET_COLORS.map((c) => (
                   <button
@@ -170,8 +153,7 @@ export default function TagPopover({ site }: Props) {
                 <button
                   type="submit"
                   disabled={createTag.isPending}
-                  className="flex-1 py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1"
-                  style={{ background: "var(--color-primary)", color: "white" }}
+                  className="flex-1 py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1 bg-primary text-white"
                 >
                   {createTag.isPending ? (
                     <Loader2 size={12} className="animate-spin" />
@@ -182,11 +164,7 @@ export default function TagPopover({ site }: Props) {
                 <button
                   type="button"
                   onClick={() => setCreating(false)}
-                  className="px-2.5 py-1.5 text-xs rounded-lg"
-                  style={{
-                    background: "var(--bg-secondary)",
-                    color: "var(--fg-secondary)",
-                  }}
+                  className="px-2.5 py-1.5 text-xs rounded-lg bg-(--bg-secondary) text-(--fg-secondary)"
                 >
                   Cancel
                 </button>
