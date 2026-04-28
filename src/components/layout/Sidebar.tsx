@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Shield,
+  GitCompare,
 } from "lucide-react";
 import { ROUTES } from "@/lib/constants";
 import { useAuthStore } from "@/stores/authStore";
@@ -14,6 +15,7 @@ import { useAuthStore } from "@/stores/authStore";
 const NAV_ITEMS = [
   { to: ROUTES.dashboard, icon: LayoutDashboard, label: "Dashboard" },
   { to: ROUTES.sites, icon: List, label: "Sites list" },
+  { to: ROUTES.compare, icon: GitCompare, label: "Compare" },
   { to: ROUTES.settings, icon: Settings, label: "Settings" },
 ];
 

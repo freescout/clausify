@@ -62,6 +62,7 @@ export const ROUTES = {
   siteHistory: (id: string) => `/sites/${id}/history`,
   settings: "/settings",
   login: "/login",
+  compare: "/compare",
 } as const;
 
 // ─── Pagination ────────────────────────────────────────────────────────────

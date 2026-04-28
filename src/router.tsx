@@ -8,6 +8,7 @@ const SitesList = lazy(() => import("@/pages/sites/SitesListPage"));
 const SiteDetail = lazy(() => import("@/pages/sites/SiteDetailPage"));
 const SiteHistory = lazy(() => import("@/pages/sites/SiteHistoryPage"));
 const Settings = lazy(() => import("@/pages/settings/SettingsPage"));
+const Compare = lazy(() => import("@/pages/compare/ComparePage"));
 
 const router = createBrowserRouter([
   {
@@ -51,6 +52,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <Settings />
+          </Suspense>
+        ),
+      },
+      {
+        path: "compare",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <Compare />
           </Suspense>
         ),
       },

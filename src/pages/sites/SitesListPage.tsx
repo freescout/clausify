@@ -36,7 +36,15 @@ function RatingBadge({ rating }: { rating: string | null }) {
   );
 }
 
-function SiteCard({ site }: { site: SiteListItem }) {
+function SiteCard({
+  site,
+  compareSelected,
+  onToggleCompare,
+}: {
+  site: SiteListItem;
+  compareSelected: boolean;
+  onToggleCompare: (domain: string) => void;
+}) {
   const navigate = useNavigate();
   const score = site.current_global_score ?? null;
   const rating = site.current_rating ?? "green";
@@ -47,7 +55,6 @@ function SiteCard({ site }: { site: SiteListItem }) {
     orange: "bg-moderate",
     green: "bg-safe",
   };
-
   const initBg: Record<string, string> = {
     red: "bg-high-bg text-high-text",
     orange: "bg-moderate-bg text-moderate-text",
@@ -57,9 +64,20 @@ function SiteCard({ site }: { site: SiteListItem }) {
   return (
     <div
       onClick={() => navigate(`/sites/${site.domain}`)}
-      className="bg-(--surface) border border-(--border) rounded-lg p-4 cursor-pointer hover:border-(--border-strong) hover:shadow-sm transition-all"
+      className={`bg-(--surface) border rounded-lg p-4 cursor-pointer hover:border-(--border-strong) hover:shadow-sm transition-all ${compareSelected ? "border-primary" : "border-(--border)"}`}
     >
       <div className="flex items-start gap-3">
+        {/* Compare checkbox */}
+        <input
+          type="checkbox"
+          checked={compareSelected}
+          onChange={(e) => {
+            e.stopPropagation();
+            onToggleCompare(site.domain);
+          }}
+          onClick={(e) => e.stopPropagation()}
+          className="mt-1 accent-primary shrink-0"
+        />
         <div
           className={`w-9 h-9 rounded-md flex items-center justify-center text-sm font-semibold shrink-0 ${initBg[rating]}`}
         >
@@ -108,9 +126,13 @@ function SiteCard({ site }: { site: SiteListItem }) {
 function GroupedView({
   sites,
   selectedTags,
+  compareSelection,
+  onToggleCompare,
 }: {
   sites: SiteListItem[];
   selectedTags: string[];
+  compareSelection: string[];
+  onToggleCompare: (domain: string) => void;
 }) {
   const { data: allTags = [] } = useTags();
 
@@ -141,7 +163,6 @@ function GroupedView({
     <div className="space-y-8">
       {groups.map(({ tag, sites: groupSites, avgScore }) => (
         <div key={tag.id}>
-          {/* Group header */}
           <div className="flex items-center gap-3 mb-3">
             <span
               className="w-3 h-3 rounded-full shrink-0"
@@ -171,14 +192,18 @@ function GroupedView({
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {groupSites.map((site) => (
-                <SiteCard key={site.id} site={site} />
+                <SiteCard
+                  key={site.id}
+                  site={site}
+                  compareSelected={compareSelection.includes(site.domain)}
+                  onToggleCompare={onToggleCompare}
+                />
               ))}
             </div>
           )}
         </div>
       ))}
 
-      {/* Untagged */}
       {untagged.length > 0 && (
         <div>
           <div className="flex items-center gap-3 mb-3">
@@ -190,7 +215,12 @@ function GroupedView({
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {untagged.map((site) => (
-              <SiteCard key={site.id} site={site} />
+              <SiteCard
+                key={site.id}
+                site={site}
+                compareSelected={compareSelection.includes(site.domain)}
+                onToggleCompare={onToggleCompare}
+              />
             ))}
           </div>
         </div>
@@ -221,6 +251,17 @@ export default function SitesListPage() {
   const [page, setPage] = useState(1);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagOperator, setTagOperator] = useState<"AND" | "OR">("OR");
+  const [compareSelection, setCompareSelection] = useState<string[]>([]);
+
+  function toggleCompare(domain: string) {
+    setCompareSelection((prev) =>
+      prev.includes(domain)
+        ? prev.filter((d) => d !== domain)
+        : prev.length < 3
+          ? [...prev, domain]
+          : prev,
+    );
+  }
 
   const toggleTag = (tagId: string) => {
     setSelectedTags((prev) =>
@@ -259,7 +300,6 @@ export default function SitesListPage() {
     });
 
   const resetPage = () => setPage(1);
-
   const handleSearch = (value: string) => {
     setSearch(value);
     resetPage();
@@ -268,7 +308,6 @@ export default function SitesListPage() {
     setRating(value);
     resetPage();
   };
-
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
       setSortOrder((o) => (o === "asc" ? "desc" : "asc"));
@@ -311,7 +350,7 @@ export default function SitesListPage() {
 
   return (
     <div className="space-y-4">
-      {/* ── Filters row 1 ── */}
+      {/* ── Filters row ── */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search
@@ -356,7 +395,6 @@ export default function SitesListPage() {
           ))}
         </div>
 
-        {/* View toggle */}
         <div className="flex gap-1 border border-(--border) rounded-md p-0.5 bg-(--surface)">
           {(["grid", "list", "group"] as const).map((v) => (
             <button
@@ -377,7 +415,7 @@ export default function SitesListPage() {
         </div>
       </div>
 
-      {/* ── Tag chips (logged in only) ── */}
+      {/* ── Tag chips ── */}
       {token && allTags.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap">
           {allTags.map((tag) => {
@@ -401,8 +439,6 @@ export default function SitesListPage() {
               </button>
             );
           })}
-
-          {/* AND/OR toggle */}
           {selectedTags.length >= 2 && (
             <button
               onClick={() => setTagOperator((o) => (o === "OR" ? "AND" : "OR"))}
@@ -411,7 +447,6 @@ export default function SitesListPage() {
               {tagOperator}
             </button>
           )}
-
           {selectedTags.length > 0 && (
             <button
               onClick={() => setSelectedTags([])}
@@ -430,12 +465,22 @@ export default function SitesListPage() {
 
       {/* ── Content ── */}
       {view === "group" ? (
-        <GroupedView sites={filtered} selectedTags={selectedTags} />
+        <GroupedView
+          sites={filtered}
+          selectedTags={selectedTags}
+          compareSelection={compareSelection}
+          onToggleCompare={toggleCompare}
+        />
       ) : filtered.length > 0 ? (
         view === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {paginated.map((site) => (
-              <SiteCard key={site.id} site={site} />
+              <SiteCard
+                key={site.id}
+                site={site}
+                compareSelected={compareSelection.includes(site.domain)}
+                onToggleCompare={toggleCompare}
+              />
             ))}
           </div>
         ) : (
@@ -443,6 +488,7 @@ export default function SitesListPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-(--border) bg-(--bg-secondary)">
+                  <th className="px-4 py-3 w-8" />
                   <th className="text-left text-xs font-medium text-(--fg-tertiary) px-4 py-3 uppercase tracking-wide">
                     Site
                   </th>
@@ -467,6 +513,18 @@ export default function SitesListPage() {
                     onClick={() => navigate(`/sites/${site.domain}`)}
                     className="hover:bg-(--bg-secondary) cursor-pointer transition-colors"
                   >
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={compareSelection.includes(site.domain)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          toggleCompare(site.domain);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="accent-primary"
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <div
@@ -550,7 +608,7 @@ export default function SitesListPage() {
         </div>
       )}
 
-      {/* ── Pagination (not shown in group view) ── */}
+      {/* ── Pagination ── */}
       {view !== "group" && totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 pt-4">
           <button
@@ -560,7 +618,6 @@ export default function SitesListPage() {
           >
             ← Previous
           </button>
-
           <div className="flex gap-1">
             {Array.from({ length: totalPages }, (_, i) => i + 1)
               .filter(
@@ -594,13 +651,37 @@ export default function SitesListPage() {
                 ),
               )}
           </div>
-
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
             className="px-3 py-1.5 text-sm rounded-md border border-(--border) text-(--fg-secondary) hover:border-(--border-strong) disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Next →
+          </button>
+        </div>
+      )}
+
+      {/* ── Compare sticky bar ── */}
+      {compareSelection.length >= 2 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-xl bg-(--surface) border border-(--border-strong) shadow-lg">
+          <span className="text-sm text-(--fg-secondary)">
+            {compareSelection.length} sites selected
+          </span>
+          <button
+            onClick={() => setCompareSelection([])}
+            className="text-xs text-(--fg-tertiary) hover:text-(--fg) transition-colors"
+          >
+            Clear
+          </button>
+          <button
+            onClick={() =>
+              navigate(
+                `/compare?${compareSelection.map((d) => `d=${d}`).join("&")}`,
+              )
+            }
+            className="px-4 py-1.5 rounded-lg bg-primary text-white text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            Compare →
           </button>
         </div>
       )}

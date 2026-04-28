@@ -92,3 +92,27 @@ export function useUpdateTag() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tags"] }),
   });
 }
+
+export function useCompareSites(domains: string[]) {
+  const q0 = useQuery({
+    queryKey: ["site", domains[0]],
+    queryFn: () => fetchSiteHistory(domains[0]),
+    enabled: !!domains[0],
+  });
+  const q1 = useQuery({
+    queryKey: ["site", domains[1]],
+    queryFn: () => fetchSiteHistory(domains[1]),
+    enabled: !!domains[1],
+  });
+  const q2 = useQuery({
+    queryKey: ["site", domains[2]],
+    queryFn: () => fetchSiteHistory(domains[2]),
+    enabled: !!domains[2],
+  });
+
+  return [
+    { domain: domains[0], query: q0 },
+    { domain: domains[1], query: q1 },
+    { domain: domains[2], query: q2 },
+  ].filter((_, i) => i < domains.length);
+}
