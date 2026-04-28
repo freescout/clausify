@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ChevronUp, ChevronDown, LayoutGrid, List } from "lucide-react";
-import { useSites } from "@/hooks/useSites";
+import {
+  Search,
+  ChevronUp,
+  ChevronDown,
+  LayoutGrid,
+  List,
+  Layers,
+} from "lucide-react";
+import { useSites, useTags } from "@/hooks/useSites";
 import { formatRelativeTime } from "@/lib/utils";
 import type { SiteListItem, Rating, SortField, SortOrder } from "@/types";
 import { PAGE_SIZE, RATING_OPTIONS, SORT_OPTIONS } from "@/lib/constants";
@@ -71,7 +78,6 @@ function SiteCard({ site }: { site: SiteListItem }) {
         </div>
       </div>
 
-      {/* Score bar */}
       <div className="mt-3">
         <div className="flex items-center justify-between mb-1">
           <span className="text-xs text-(--fg-tertiary)">Trust score</span>
@@ -87,7 +93,6 @@ function SiteCard({ site }: { site: SiteListItem }) {
         </div>
       </div>
 
-      {/* Footer */}
       <div className="flex items-center justify-between mt-3">
         <div>{!!token && <TagPopover site={site} />}</div>
         <span className="text-xs text-(--fg-tertiary)">
@@ -98,15 +103,133 @@ function SiteCard({ site }: { site: SiteListItem }) {
   );
 }
 
+// ─── Grouped view ─────────────────────────────────────────────────────────────
+
+function GroupedView({
+  sites,
+  selectedTags,
+}: {
+  sites: SiteListItem[];
+  selectedTags: string[];
+}) {
+  const { data: allTags = [] } = useTags();
+
+  const tagsToShow =
+    selectedTags.length > 0
+      ? allTags.filter((t) => selectedTags.includes(t.id))
+      : allTags;
+
+  const groups = tagsToShow.map((tag) => {
+    const tagSites = sites.filter((s) => s.tags.some((t) => t.id === tag.id));
+    const avgScore =
+      tagSites.length > 0
+        ? Math.round(
+            tagSites.reduce(
+              (sum, s) => sum + (s.current_global_score ?? 0),
+              0,
+            ) / tagSites.length,
+          )
+        : null;
+    return { tag, sites: tagSites, avgScore };
+  });
+
+  const untagged = sites.filter((s) =>
+    tagsToShow.every((tag) => !s.tags.some((t) => t.id === tag.id)),
+  );
+
+  return (
+    <div className="space-y-8">
+      {groups.map(({ tag, sites: groupSites, avgScore }) => (
+        <div key={tag.id}>
+          {/* Group header */}
+          <div className="flex items-center gap-3 mb-3">
+            <span
+              className="w-3 h-3 rounded-full shrink-0"
+              style={{ background: tag.color }}
+            />
+            <span className="text-sm font-semibold text-(--fg)">
+              {tag.name}
+            </span>
+            <span className="text-xs text-(--fg-tertiary)">
+              {groupSites.length} site{groupSites.length !== 1 ? "s" : ""}
+            </span>
+            {avgScore !== null && (
+              <>
+                <span className="text-xs text-(--fg-tertiary)">·</span>
+                <span className="text-xs text-(--fg-tertiary)">
+                  avg score{" "}
+                  <span className="font-medium text-(--fg)">{avgScore}</span>
+                </span>
+              </>
+            )}
+          </div>
+
+          {groupSites.length === 0 ? (
+            <p className="text-xs text-(--fg-tertiary) pl-6 italic">
+              No sites with this tag.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {groupSites.map((site) => (
+                <SiteCard key={site.id} site={site} />
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* Untagged */}
+      {untagged.length > 0 && (
+        <div>
+          <div className="flex items-center gap-3 mb-3">
+            <span className="w-3 h-3 rounded-full shrink-0 bg-(--border)" />
+            <span className="text-sm font-semibold text-(--fg)">Untagged</span>
+            <span className="text-xs text-(--fg-tertiary)">
+              {untagged.length} site{untagged.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {untagged.map((site) => (
+              <SiteCard key={site.id} site={site} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {groups.every((g) => g.sites.length === 0) && untagged.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="text-(--fg-tertiary) text-sm">No sites found</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
+
 export default function SitesListPage() {
   const navigate = useNavigate();
   const { data: sites = [], isLoading, isError } = useSites();
+  const { data: allTags = [] } = useTags();
+  const token = useAuthStore((s) => s.token);
+
   const [search, setSearch] = useState("");
   const [rating, setRating] = useState<Rating | "all">("all");
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
-  const [view, setView] = useState<"grid" | "table">("grid");
+  const [view, setView] = useState<"grid" | "list" | "group">("grid");
   const [page, setPage] = useState(1);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagOperator, setTagOperator] = useState<"AND" | "OR">("OR");
+
+  const toggleTag = (tagId: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tagId)
+        ? prev.filter((id) => id !== tagId)
+        : [...prev, tagId],
+    );
+    setPage(1);
+  };
 
   const filtered = sites
     .filter((s) => {
@@ -114,7 +237,13 @@ export default function SitesListPage() {
         s.domain.toLowerCase().includes(search.toLowerCase()) ||
         (s.name ?? "").toLowerCase().includes(search.toLowerCase());
       const matchRating = rating === "all" || s.current_rating === rating;
-      return matchSearch && matchRating;
+      const matchTags =
+        selectedTags.length === 0
+          ? true
+          : tagOperator === "OR"
+            ? selectedTags.some((id) => s.tags.some((t) => t.id === id))
+            : selectedTags.every((id) => s.tags.some((t) => t.id === id));
+      return matchSearch && matchRating && matchTags;
     })
     .sort((a, b) => {
       const dir = sortOrder === "asc" ? 1 : -1;
@@ -135,7 +264,6 @@ export default function SitesListPage() {
     setSearch(value);
     resetPage();
   };
-
   const handleRating = (value: Rating | "all") => {
     setRating(value);
     resetPage();
@@ -183,7 +311,7 @@ export default function SitesListPage() {
 
   return (
     <div className="space-y-4">
-      {/* Filters */}
+      {/* ── Filters row 1 ── */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search
@@ -228,28 +356,82 @@ export default function SitesListPage() {
           ))}
         </div>
 
+        {/* View toggle */}
         <div className="flex gap-1 border border-(--border) rounded-md p-0.5 bg-(--surface)">
-          <button
-            onClick={() => setView("grid")}
-            className={`p-1.5 rounded transition-colors ${view === "grid" ? "bg-primary-subtle text-primary" : "text-(--fg-tertiary) hover:text-(--fg)"}`}
-          >
-            <LayoutGrid size={14} />
-          </button>
-          <button
-            onClick={() => setView("table")}
-            className={`p-1.5 rounded transition-colors ${view === "table" ? "bg-primary-subtle text-primary" : "text-(--fg-tertiary) hover:text-(--fg)"}`}
-          >
-            <List size={14} />
-          </button>
+          {(["grid", "list", "group"] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`p-1.5 rounded transition-colors ${view === v ? "bg-primary-subtle text-primary" : "text-(--fg-tertiary) hover:text-(--fg)"}`}
+              title={v.charAt(0).toUpperCase() + v.slice(1)}
+            >
+              {v === "grid" ? (
+                <LayoutGrid size={14} />
+              ) : v === "list" ? (
+                <List size={14} />
+              ) : (
+                <Layers size={14} />
+              )}
+            </button>
+          ))}
         </div>
       </div>
+
+      {/* ── Tag chips (logged in only) ── */}
+      {token && allTags.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {allTags.map((tag) => {
+            const active = selectedTags.includes(tag.id);
+            return (
+              <button
+                key={tag.id}
+                onClick={() => toggleTag(tag.id)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all"
+                style={{
+                  background: active ? tag.color + "22" : "transparent",
+                  color: active ? tag.color : "var(--fg-secondary)",
+                  borderColor: active ? tag.color + "66" : "var(--border)",
+                }}
+              >
+                <span
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ background: tag.color }}
+                />
+                {tag.name}
+              </button>
+            );
+          })}
+
+          {/* AND/OR toggle */}
+          {selectedTags.length >= 2 && (
+            <button
+              onClick={() => setTagOperator((o) => (o === "OR" ? "AND" : "OR"))}
+              className="px-2.5 py-1 rounded-full text-xs font-semibold border border-(--border) text-(--fg-secondary) hover:text-(--fg) hover:border-(--border-strong) transition-colors"
+            >
+              {tagOperator}
+            </button>
+          )}
+
+          {selectedTags.length > 0 && (
+            <button
+              onClick={() => setSelectedTags([])}
+              className="text-xs text-(--fg-tertiary) hover:text-(--fg) transition-colors"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="text-xs text-(--fg-tertiary)">
         {filtered.length} site{filtered.length !== 1 ? "s" : ""} found
         {totalPages > 1 && ` — page ${page} of ${totalPages}`}
       </div>
 
-      {filtered.length > 0 ? (
+      {/* ── Content ── */}
+      {view === "group" ? (
+        <GroupedView sites={filtered} selectedTags={selectedTags} />
+      ) : filtered.length > 0 ? (
         view === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {paginated.map((site) => (
@@ -367,7 +549,9 @@ export default function SitesListPage() {
           </div>
         </div>
       )}
-      {totalPages > 1 && (
+
+      {/* ── Pagination (not shown in group view) ── */}
+      {view !== "group" && totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 pt-4">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
