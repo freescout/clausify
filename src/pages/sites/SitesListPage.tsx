@@ -252,15 +252,18 @@ export default function SitesListPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagOperator, setTagOperator] = useState<"AND" | "OR">("OR");
   const [compareSelection, setCompareSelection] = useState<string[]>([]);
+  const [compareMaxWarning, setCompareMaxWarning] = useState(false);
 
   function toggleCompare(domain: string) {
-    setCompareSelection((prev) =>
-      prev.includes(domain)
-        ? prev.filter((d) => d !== domain)
-        : prev.length < 3
-          ? [...prev, domain]
-          : prev,
-    );
+    setCompareSelection((prev) => {
+      if (prev.includes(domain)) return prev.filter((d) => d !== domain);
+      if (prev.length >= 3) {
+        setCompareMaxWarning(true);
+        setTimeout(() => setCompareMaxWarning(false), 2000);
+        return prev;
+      }
+      return [...prev, domain];
+    });
   }
 
   const toggleTag = (tagId: string) => {
@@ -667,6 +670,9 @@ export default function SitesListPage() {
           <span className="text-sm text-(--fg-secondary)">
             {compareSelection.length} sites selected
           </span>
+          {compareMaxWarning && (
+            <span className="text-xs text-high-text">Max 3 sites</span>
+          )}
           <button
             onClick={() => setCompareSelection([])}
             className="text-xs text-(--fg-tertiary) hover:text-(--fg) transition-colors"
