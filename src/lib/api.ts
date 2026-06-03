@@ -48,7 +48,7 @@ export async function analyzeUrl(url: string): Promise<void> {
 export async function loginUser(email: string, password: string) {
   return request<{
     token: string;
-    user: { id: number; email: string; name: string };
+    user: { id: string; email: string; name: string };
   }>("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
@@ -62,7 +62,7 @@ export async function registerUser(
 ) {
   return request<{
     token: string;
-    user: { id: number; email: string; name: string };
+    user: { id: string; email: string; name: string };
   }>("/api/auth/register", {
     method: "POST",
     body: JSON.stringify({ email, password, name }),
