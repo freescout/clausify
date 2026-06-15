@@ -38,13 +38,6 @@ export async function fetchSiteHistoryDetail(
   return request<CgvVersion>(`/api/sites/${domain}/history/${historyId}`);
 }
 
-export async function analyzeUrl(url: string): Promise<void> {
-  return request<void>("/api/analyze", {
-    method: "POST",
-    body: JSON.stringify({ url }),
-  });
-}
-
 export async function loginUser(email: string, password: string) {
   return request<{
     token: string;
