@@ -6,6 +6,7 @@ import {
   SEVERITY_LABELS,
   formatDate,
   formatRelativeTime,
+  getRating,
 } from "@/lib/utils";
 import type { Clause, ClauseType } from "@/types";
 
@@ -172,8 +173,8 @@ export default function SiteDetailPage() {
   if (isError || !site)
     return <div className="text-sm text-(--fg-tertiary)">Site not found.</div>;
 
-  const rating = site.current_rating ?? "green";
   const score = site.current_global_score ?? 0;
+  const rating = getRating(score);
 
   return (
     <div className="space-y-6">

@@ -9,7 +9,7 @@ import {
   Layers,
 } from "lucide-react";
 import { useSites, useTags } from "@/hooks/useSites";
-import { formatRelativeTime } from "@/lib/utils";
+import { formatRelativeTime, getRating } from "@/lib/utils";
 import type { SiteListItem, Rating, SortField, SortOrder } from "@/types";
 import { PAGE_SIZE, RATING_OPTIONS, SORT_OPTIONS } from "@/lib/constants";
 import TagPopover from "@/components/ui/TagPopover";
@@ -47,7 +47,7 @@ function SiteCard({
 }) {
   const navigate = useNavigate();
   const score = site.current_global_score ?? null;
-  const rating = site.current_rating ?? "green";
+  const rating = getRating(site.current_global_score ?? 0);
   const token = useAuthStore((s) => s.token);
 
   const barColor: Record<string, string> = {
@@ -88,7 +88,7 @@ function SiteCard({
             <span className="text-sm font-medium text-(--fg) truncate">
               {site.name ?? site.domain}
             </span>
-            <RatingBadge rating={site.current_rating} />
+            <RatingBadge rating={getRating(site.current_global_score ?? 0)} />
           </div>
           <div className="text-xs text-(--fg-tertiary) mt-0.5">
             {site.domain}
@@ -532,9 +532,9 @@ export default function SitesListPage() {
                       <div className="flex items-center gap-2.5">
                         <div
                           className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-semibold shrink-0 ${
-                            site.current_rating === "red"
+                            rating === "red"
                               ? "bg-high-bg text-high-text"
-                              : site.current_rating === "orange"
+                              : rating === "orange"
                                 ? "bg-moderate-bg text-moderate-text"
                                 : "bg-safe-bg text-safe-text"
                           }`}
@@ -552,23 +552,30 @@ export default function SitesListPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <RatingBadge rating={site.current_rating} />
+                      <RatingBadge
+                        rating={getRating(site.current_global_score ?? 0)}
+                      />
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
                       <div className="flex items-center gap-2">
                         <div className="w-20 h-1.5 bg-(--bg-tertiary) rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${
-                              site.current_rating === "red"
-                                ? "bg-high"
-                                : site.current_rating === "orange"
-                                  ? "bg-moderate"
-                                  : "bg-safe"
-                            }`}
-                            style={{
-                              width: `${site.current_global_score ?? 0}%`,
-                            }}
-                          />
+                          {(() => {
+                            const r = getRating(site.current_global_score ?? 0);
+                            return (
+                              <div
+                                className={`h-full rounded-full ${
+                                  r === "red"
+                                    ? "bg-high"
+                                    : r === "orange"
+                                      ? "bg-moderate"
+                                      : "bg-safe"
+                                }`}
+                                style={{
+                                  width: `${site.current_global_score ?? 0}%`,
+                                }}
+                              />
+                            );
+                          })()}
                         </div>
                         <span className="text-sm text-(--fg)">
                           {site.current_global_score ?? "—"}

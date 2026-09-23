@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import type { Rating, Severity, ClauseType } from "@/types";
+import type { Rating, Severity, ClauseType, SiteListItem } from "@/types";
 
 // ─── className helper ──────────────────────────────────────────────────────
 
@@ -14,6 +14,10 @@ export function getRating(score: number): Rating {
   if (score <= 30) return "red";
   if (score <= 65) return "orange";
   return "green";
+}
+
+export function getSiteRating(site: SiteListItem): Rating {
+  return getRating(site.current_global_score ?? 0);
 }
 
 export function getRatingLabel(rating: Rating): string {

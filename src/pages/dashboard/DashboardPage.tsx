@@ -1,5 +1,5 @@
 import { useSites } from "@/hooks/useSites";
-import { CLAUSE_LABELS, formatRelativeTime } from "@/lib/utils";
+import { CLAUSE_LABELS, formatRelativeTime, getRating } from "@/lib/utils";
 import type { SiteListItem } from "@/types";
 
 function StatCard({
@@ -184,7 +184,9 @@ export default function DashboardPage() {
         ) / analyzedSites.length,
       )
     : 0;
-  const highRiskCount = sites.filter((s) => s.current_rating === "red").length;
+  const highRiskCount = sites.filter(
+    (s) => getRating(s.current_global_score ?? 0) === "red",
+  ).length;
   const topRisky = [...analyzedSites]
     .sort(
       (a, b) =>

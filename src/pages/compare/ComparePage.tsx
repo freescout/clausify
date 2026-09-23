@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, X } from "lucide-react";
 import { useSites, useCompareSites } from "@/hooks/useSites";
-import { CLAUSE_LABELS, SEVERITY_LABELS } from "@/lib/utils";
+import { CLAUSE_LABELS, getRating, SEVERITY_LABELS } from "@/lib/utils";
 import type { ClauseType, SiteDetail, Clause } from "@/types";
 
 const MAX_SITES = 3;
@@ -114,7 +114,7 @@ function SiteSelector({
                       <span>{site.name ?? site.domain}</span>
                       {site.current_global_score !== null && (
                         <span
-                          className={`text-xs font-semibold ${ratingText[site.current_rating ?? "green"]}`}
+                          className={`text-xs font-semibold ${ratingText[getRating(site.current_global_score ?? 0)]}`}
                         >
                           {site.current_global_score}
                         </span>
@@ -162,7 +162,7 @@ function SiteColumnHeader({
     );
   }
 
-  const rating = site.current_rating ?? "green";
+  const rating = getRating(site.current_global_score ?? 0);
   const score = site.current_global_score ?? 0;
 
   return (

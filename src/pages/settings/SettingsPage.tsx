@@ -195,7 +195,7 @@ function NewTagForm() {
       <button
         type="submit"
         disabled={!name.trim() || createTag.isPending}
-        className="px-3 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 disabled:opacity-40 bg-(--color-primary) text-white"
+        className="px-3 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 disabled:opacity-40 bg-primary text-white"
       >
         {createTag.isPending ? (
           <Loader2 size={12} className="animate-spin" />
