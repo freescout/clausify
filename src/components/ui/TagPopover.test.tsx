@@ -4,15 +4,14 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import TagPopover from "./TagPopover";
-import { useAuthStore } from "@/stores/authStore";
-import * as hooks from "@/hooks/useSites";
-import type { SiteListItem } from "@/types";
+import { useAuthStore } from "../../stores/authStore";
+import * as hooks from "../../hooks/useSites";
+import type { SiteListItem } from "../../types";
 
-vi.mock("@/hooks/useSites", async () => {
-  const actual =
-    await vi.importActual<typeof import("@/hooks/useSites")>(
-      "@/hooks/useSites",
-    );
+vi.mock("../../hooks/useSites", async () => {
+  const actual = await vi.importActual<typeof import("../../hooks/useSites")>(
+    "../../hooks/useSites",
+  );
 
   return {
     ...actual,
@@ -85,11 +84,16 @@ describe("TagPopover", () => {
       submit: vi.fn(),
       remove: vi.fn(),
       promise: Promise.resolve([]),
-      ...({} as never),
-    } as never);
-    vi.mocked(hooks.useAssignTag).mockReturnValue(assignTag as never);
-    vi.mocked(hooks.useRemoveTag).mockReturnValue(removeTag as never);
-    vi.mocked(hooks.useCreateTag).mockReturnValue(createTag as never);
+    } as unknown as ReturnType<typeof hooks.useTags>);
+    vi.mocked(hooks.useAssignTag).mockReturnValue(
+      assignTag as unknown as ReturnType<typeof hooks.useAssignTag>,
+    );
+    vi.mocked(hooks.useRemoveTag).mockReturnValue(
+      removeTag as unknown as ReturnType<typeof hooks.useRemoveTag>,
+    );
+    vi.mocked(hooks.useCreateTag).mockReturnValue(
+      createTag as unknown as ReturnType<typeof hooks.useCreateTag>,
+    );
 
     const site: SiteListItem = {
       id: "site-1",

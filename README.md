@@ -35,13 +35,13 @@ It is the web platform component of a three-part system built during a hackathon
 
 ## Scoring System
 
-Clausify uses a **0–100 risk score** where higher means more risky.
+Clausify uses a **0–100 risk score** where lower means more risky.
 
 | Score    | Rating    | Color |
 | -------- | --------- | ----- |
-| 0 – 30   | Safe      | Green |
+| 66 – 100 | Safe      | Green |
 | 31 – 65  | Moderate  | Amber |
-| 66 – 100 | High risk | Red   |
+| 0 – 30   | High risk | Red   |
 
 Scores are calculated by the backend based on detected clause types and their severity.
 
@@ -189,7 +189,7 @@ yarn dev
 Create a `.env.local` file at the root:
 
 ```env
-VITE_API_URL=http://localhost:3000
+VITE_API_BASE=http://localhost:3000
 ```
 
 ### Git workflow
@@ -240,10 +240,10 @@ The web platform communicates with the backend via REST API.
 - [x] Compare page (multi-site, side-by-side)
 - [x] Tags (create, assign, filter, AND/OR operator)
 - [x] Settings page
+- [x] Chrome extension
 
 ### v2
 
-- [ ] Chrome extension
 - [ ] PDF export
 - [ ] Version diff viewer
 - [ ] Deploy
